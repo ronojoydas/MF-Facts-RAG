@@ -55,25 +55,8 @@ def load_chunks():
     return chunks
 
 
-def main():
-    chunks = load_chunks()
-    print(f"Chunks loaded: {len(chunks)}")
-    print(f"Embedding model: {EMBEDDING_MODEL_NAME}")
-    print(f"Collection name: {CHROMA_COLLECTION_NAME}")
-    print(f"Database location: {CHROMA_PERSIST_DIR}")
-
-    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-    # A full rebuild also clears stale ANN segment state for reused chunk IDs.
-    # This directory is the dedicated Phase 3 vector store.
-    if CHROMA_PERSIST_DIR.exists():
-        shutil.rmtree(CHROMA_PERSIST_DIR)
-    CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
-    client = chromadb.PersistentClient(path=str(CHROMA_PERSIST_DIR))
-    collection = client.create_collection(
-        name=CHROMA_COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine", "embedding_model": EMBEDDING_MODEL_NAME},
-    )
-
+def index_chunks(collection, chunks, model):
+    """Embed chunks into an already-created collection."""
     inserted = 0
     for start in range(0, len(chunks), BATCH_SIZE):
         batch = chunks[start : start + BATCH_SIZE]
@@ -101,6 +84,64 @@ def main():
         )
         inserted += len(batch)
         print(f"Indexed {inserted}/{len(chunks)} chunks")
+    return inserted
+
+
+def get_or_build_collection(model=None):
+    """Return the existing collection or build it without deleting the store.
+
+    The Streamlit app calls this with its cached embedding model. If the
+    collection is absent, this function indexes the verified JSONL corpus into
+    the persistent database; an existing database directory is never removed.
+    """
+    client = chromadb.PersistentClient(path=str(CHROMA_PERSIST_DIR))
+    existing_names = {
+        item.name if hasattr(item, "name") else str(item)
+        for item in client.list_collections()
+    }
+    if CHROMA_COLLECTION_NAME in existing_names:
+        return client.get_collection(CHROMA_COLLECTION_NAME)
+
+    chunks = load_chunks()
+    if model is None:
+        model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+
+    print(f"Chunks loaded: {len(chunks)}")
+    print(f"Embedding model: {EMBEDDING_MODEL_NAME}")
+    print(f"Collection name: {CHROMA_COLLECTION_NAME}")
+    print(f"Database location: {CHROMA_PERSIST_DIR}")
+
+    CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
+    collection = client.create_collection(
+        name=CHROMA_COLLECTION_NAME,
+        metadata={"hnsw:space": "cosine", "embedding_model": EMBEDDING_MODEL_NAME},
+    )
+    inserted = index_chunks(collection, chunks, model)
+    print(f"Chunks inserted or updated: {inserted}")
+    print(f"Collection document count: {collection.count()}")
+    return collection
+
+
+def main():
+    chunks = load_chunks()
+    print(f"Chunks loaded: {len(chunks)}")
+    print(f"Embedding model: {EMBEDDING_MODEL_NAME}")
+    print(f"Collection name: {CHROMA_COLLECTION_NAME}")
+    print(f"Database location: {CHROMA_PERSIST_DIR}")
+
+    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+    # A full rebuild also clears stale ANN segment state for reused chunk IDs.
+    # This directory is the dedicated Phase 3 vector store.
+    if CHROMA_PERSIST_DIR.exists():
+        shutil.rmtree(CHROMA_PERSIST_DIR)
+    CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
+    client = chromadb.PersistentClient(path=str(CHROMA_PERSIST_DIR))
+    collection = client.create_collection(
+        name=CHROMA_COLLECTION_NAME,
+        metadata={"hnsw:space": "cosine", "embedding_model": EMBEDDING_MODEL_NAME},
+    )
+
+    inserted = index_chunks(collection, chunks, model)
 
     print(f"Chunks inserted or updated: {inserted}")
     print(f"Collection name: {collection.name}")

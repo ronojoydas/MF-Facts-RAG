@@ -2,19 +2,17 @@
 
 import os
 
-import chromadb
 import streamlit as st
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
 from src.config import (
-    CHROMA_COLLECTION_NAME,
-    CHROMA_PERSIST_DIR,
     EMBEDDING_MODEL_NAME,
     PROJECT_ROOT,
 )
 from src.generation import UNVERIFIED_MESSAGE, generate_answer
 from src.guardrails import classify_question
+from src.retrieval.embed_and_store import get_or_build_collection
 from src.retrieval.rerank import retrieve
 
 
@@ -26,12 +24,21 @@ EXAMPLE_QUESTIONS = (
 
 load_dotenv(dotenv_path=PROJECT_ROOT / ".env", override=False)
 
+# Streamlit Community Cloud exposes configured values through st.secrets.
+# Preserve an existing local environment/.env value if both are configured.
+try:
+    _groq_secret = st.secrets.get("GROQ_API_KEY")
+except Exception:
+    _groq_secret = None
+if _groq_secret and not os.getenv("GROQ_API_KEY"):
+    os.environ["GROQ_API_KEY"] = str(_groq_secret)
+
 
 @st.cache_resource(show_spinner="Loading the local facts index…")
 def load_retrieval_resources():
-    model = SentenceTransformer(EMBEDDING_MODEL_NAME, local_files_only=True)
-    client = chromadb.PersistentClient(path=str(CHROMA_PERSIST_DIR))
-    collection = client.get_collection(CHROMA_COLLECTION_NAME)
+    # Downloads and caches the model on first use in a fresh deployment.
+    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+    collection = get_or_build_collection(model=model)
     return model, collection
 
 
