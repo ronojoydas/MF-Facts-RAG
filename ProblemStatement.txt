@@ -1,0 +1,145 @@
+FACTS-ONLY MUTUAL FUND FAQ ASSISTANT
+
+PROJECT GOAL
+
+Build a small RAG-based chatbot that answers factual questions
+about selected HDFC mutual fund schemes using verified public
+sources.
+
+The assistant provides concise, citation-backed factual answers
+and must not provide investment advice.
+
+
+PRODUCT
+
+Groww
+
+
+AMC
+
+HDFC Mutual Fund
+
+
+SCHEMES
+
+1. HDFC Large Cap Fund
+2. HDFC Flexi Cap Fund
+3. HDFC ELSS Tax Saver Fund
+4. HDFC Small Cap Fund
+5. HDFC Balanced Advantage Fund
+
+
+SUPPORTED QUESTIONS
+
+The assistant should answer factual questions such as:
+
+- What is the expense ratio?
+- What is the exit load?
+- What is the minimum SIP?
+- What is the ELSS lock-in period?
+- What is the riskometer?
+- What is the benchmark?
+- How can I download a capital-gains statement?
+
+
+OUT OF SCOPE
+
+The assistant must not:
+
+- Recommend a mutual fund
+- Tell users what they should buy
+- Tell users what they should sell
+- Give portfolio advice
+- Predict returns
+- Compare investment returns
+- Make investment decisions for the user
+
+
+SAFETY REQUIREMENTS
+
+The assistant must:
+
+- Answer using the provided source material
+- Provide a source link with every factual answer
+- Keep answers concise
+- Say "I don't know" when the source material does not
+  contain the answer
+- Refuse investment-advice questions politely
+- Avoid requesting or storing personal information
+
+
+PRIVACY
+
+The system must not accept or store:
+
+- PAN
+- Aadhaar
+- Bank account numbers
+- OTPs
+- Email addresses
+- Phone numbers
+
+
+SOURCE REQUIREMENTS
+
+Use public sources only.
+
+Preferred sources:
+
+- HDFC AMC
+- SEBI
+- AMFI
+
+Do not use third-party blogs as factual sources.
+
+
+RAG PIPELINE
+
+Data ingestion:
+
+Load → Chunk → Embed → Store in Vector Database
+
+Data retrieval:
+
+Question → Embed → Retrieve relevant chunks
+→ LLM + system prompt → Generate answer
+
+
+TECHNOLOGY
+
+Embedding model:
+
+sentence-transformers/all-MiniLM-L6-v2
+
+Vector database:
+
+ChromaDB
+
+LLM:
+
+Groq
+
+UI:
+
+Streamlit
+
+
+ANSWER REQUIREMENTS
+
+Every factual answer should:
+
+1. Directly answer the question.
+2. Use only retrieved source information.
+3. Include one clear source link.
+4. Include:
+
+"Last updated from sources:"
+
+Answers should be no more than three sentences.
+
+
+IMPORTANT
+
+The system is a facts-only assistant.
+
+It does not provide investment advice.
