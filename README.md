@@ -2,6 +2,12 @@
 
 A retrieval-augmented generation (RAG) chatbot for factual information about selected HDFC Mutual Fund schemes. It retrieves information from official source documents and provides a concise answer with source attribution.
 
+## Live Demo
+
+Try the deployed Facts-Only MF Assistant:
+
+[https://mf-facts-rag-c4xucgcbqm3ou8mgnk5jxb.streamlit.app/](https://mf-facts-rag-c4xucgcbqm3ou8mgnk5jxb.streamlit.app/)
+
 **Supported AMC:** HDFC Mutual Fund
 
 **Supported schemes:**
